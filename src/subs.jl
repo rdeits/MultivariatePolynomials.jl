@@ -1,5 +1,5 @@
-function evalmap(vars, x::Vector, varorder::Vector{PolyVar})
-  vals = Any[var for var in vars]
+function evalmap{T}(vars, x::Vector{T}, varorder::Vector{PolyVar})
+  vals = Vector{T}(length(vars))
   for (i, var) in enumerate(varorder)
     j = findfirst(vars, var)
     # If i == 0, that means that the variable is not present
@@ -12,13 +12,14 @@ function evalmap(vars, x::Vector, varorder::Vector{PolyVar})
 end
 
 function termeval(t::Term, vals::Vector)
-  val = t.α
-  for i in 1:length(vals)
-    if t.x.z[i] > 0
-      val *= vals[i]^t.x.z[i]
-    end
+  @assert length(vals) > 0
+  val = vals[1] ^ t.x.z[1]
+  for i in 2:length(vals)
+      if t.x.z[i] > 0
+          val *= vals[i]^t.x.z[i]
+      end
   end
-  val
+  val * t.α
 end
 
 function (m::PolyVar)(x::Vector, varorder)
@@ -36,11 +37,7 @@ end
 
 function (p::VecPolynomial)(x::Vector, varorder)
   vals = evalmap(vars(p), x, varorder)
-  q = zero(p)
-  for t in p
-    q += termeval(t, vals)
-  end
-  q
+  sum(t -> termeval(t, vals), p)
 end
 
 function (p::MatPolynomial)(x::Vector, varorder)
